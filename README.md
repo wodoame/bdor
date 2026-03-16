@@ -1,5 +1,5 @@
 # Balon d'Or - Full Stack Application
-
+# 1
 A full-stack web application built with Django (backend) and React + Vite + TypeScript (frontend).
 
 ## 🏗️ Architecture
