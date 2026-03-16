@@ -18,7 +18,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include, path
 
-from core.views import IndexView, TestPlayersView
+from core.views import IndexView
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -26,5 +26,5 @@ urlpatterns = [
     path("", include("core.urls")),
     # Add your API routes here before the catch-all route
     path("api/", include("api.urls")),
-    path("test-players/", TestPlayersView.as_view(), name="test-players"),
+    #path("test-players/", TestPlayersView.as_view(), name="test-players"),
 ]
