@@ -5,12 +5,13 @@ import cloudscraper
 from django.db import OperationalError, ProgrammingError
 from django.db.transaction import atomic
 from django.utils import timezone
+from django.conf import settings
 
 from api.models import Player, StatsSource
 from api.services.data_normalization_service import DataNormalizationService
 from api.services.player_ranking_service import PlayerRankingService
 
-URL = "https://1xbet.whoscored.com/statisticsfeed/1/getplayerstatistics"
+URL = settings.STATS_URL
 logger = logging.getLogger(__name__)
 
 SOURCE_CONFIG: dict[str, dict[str, dict[str, str]]] = {
@@ -61,23 +62,6 @@ SOURCE_CONFIG: dict[str, dict[str, dict[str, str]]] = {
 }
 
 SUPPORTED_STATS_SOURCES = list(StatsSource.values)
-
-
-def to_int(value) -> int | None:
-    """Convert external numeric values to integers when possible."""
-
-    if value is None or value == "":
-        return None
-    return int(float(value))
-
-
-def to_float(value) -> float | None:
-    """Convert external numeric values to floats when possible."""
-
-    if value is None or value == "":
-        return None
-    return float(value)
-
 
 class ExternalStatsService:
     """Fetch external stats and upsert one stable combined player row per player."""

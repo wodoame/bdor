@@ -191,3 +191,5 @@ LOGGING = {
         }
     },
 }
+
+STATS_URL = os.getenv('STATS_URL')
