@@ -7,6 +7,7 @@ from django.utils import timezone
 from api.models import Player
 from api.services.data_normalization_service import DataNormalizationService
 from api.services.external_stats_service import ExternalStatsService
+from api.services.player_ranking_service import PlayerRankingService
 
 
 class DataNormalizationServiceTests(TestCase):
@@ -16,15 +17,13 @@ class DataNormalizationServiceTests(TestCase):
             name="Ada Player",
             position_text="Forward",
             team_name="Test FC",
-            stats={
-                "goals": 4,
-                "assists": 3,
-                "yellow_cards": 1,
-                "red_cards": 0,
-                "man_of_the_match": 3,
-                "appearances": 7,
-                "rating": 7.75,
-            },
+            goals=4,
+            assists=3,
+            yellow_cards=1,
+            red_cards=0,
+            man_of_the_match=3,
+            appearances=7,
+            rating=7.75,
             rank=2,
         )
 
@@ -52,14 +51,14 @@ class ExternalStatsServiceTests(TestCase):
         self.assertTrue(ExternalStatsService.should_fetch_today())
 
     def test_should_fetch_today_returns_false_for_today_player_update(self):
-        Player.objects.create(player_id=1, name="A", stats={})
+        Player.objects.create(player_id=1, name="A")
 
         self.assertFalse(ExternalStatsService.should_fetch_today())
 
     def test_should_fetch_today_returns_true_for_stale_player_update(self):
-        player = Player.objects.create(player_id=1, name="A", stats={})
-        player.updated_at = timezone.now() - timedelta(days=1)
-        player.save(update_fields=["updated_at"])
+        player = Player.objects.create(player_id=1, name="A")
+        # Use queryset update() to avoid auto_now resetting the field.
+        Player.objects.filter(pk=player.pk).update(updated_at=timezone.now() - timedelta(days=1))
 
         self.assertTrue(ExternalStatsService.should_fetch_today())
 
@@ -70,17 +69,14 @@ class ExternalStatsServiceTests(TestCase):
             "europa": [{"playerId": 3, "name": "C"}],
         }
 
-        with (
-            patch.object(
-                ExternalStatsService,
-                "_fetch_source_payload",
-                side_effect=lambda source: payloads[source],
-            ),
-            patch.object(
-                ExternalStatsService,
-                "_upsert_players_from_payloads",
-                side_effect=RuntimeError("boom"),
-            ),
+        with patch.object(
+            ExternalStatsService,
+            "_fetch_source_payload",
+            side_effect=lambda source: payloads[source],
+        ), patch.object(
+            PlayerRankingService,
+            "get_player_rankings",
+            side_effect=RuntimeError("upsert failed"),
         ):
             with self.assertRaises(RuntimeError):
                 ExternalStatsService.sync_all_sources()

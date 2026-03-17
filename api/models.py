@@ -17,7 +17,16 @@ class Player(models.Model):
     position_text = models.CharField(max_length=50, blank=True)
     team_id = models.PositiveBigIntegerField(null=True, blank=True)
     team_name = models.CharField(max_length=255, blank=True)
-    stats = models.JSONField(default=dict, blank=True)
+
+    # Stats stored as explicit columns for better query/filter support.
+    goals = models.PositiveIntegerField(default=0)
+    assists = models.PositiveIntegerField(default=0)
+    yellow_cards = models.PositiveIntegerField(default=0)
+    red_cards = models.PositiveIntegerField(default=0)
+    man_of_the_match = models.PositiveIntegerField(default=0)
+    appearances = models.PositiveIntegerField(default=0)
+    rating = models.FloatField(default=0.0)
+
     rank = models.PositiveIntegerField(null=True, blank=True, db_index=True)
     previous_rank = models.PositiveIntegerField(null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True, db_index=True)
@@ -27,15 +36,3 @@ class Player(models.Model):
 
     def __str__(self) -> str:
         return f"{self.name} ({self.player_id})"
-
-
-class RankingSnapshot(models.Model):
-    """Represents one generated rankings run."""
-
-    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
-
-    class Meta:
-        ordering = ["-created_at", "-id"]
-
-    def __str__(self) -> str:
-        return f"Ranking snapshot {self.id}"

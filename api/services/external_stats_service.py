@@ -1,4 +1,5 @@
 import logging
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import cloudscraper
 from django.db import OperationalError, ProgrammingError
@@ -6,6 +7,8 @@ from django.db.transaction import atomic
 from django.utils import timezone
 
 from api.models import Player, StatsSource
+from api.services.data_normalization_service import DataNormalizationService
+from api.services.player_ranking_service import PlayerRankingService
 
 URL = "https://1xbet.whoscored.com/statisticsfeed/1/getplayerstatistics"
 logger = logging.getLogger(__name__)
@@ -80,14 +83,19 @@ class ExternalStatsService:
     """Fetch external stats and upsert one stable combined player row per player."""
 
     @staticmethod
-    def sync_if_stale() -> list[tuple[str, list[dict]]]:
-        """Fetch stats only when today's data has not already been stored."""
+    def sync_if_stale() -> list[dict]:
+        """Fetch stats only when today's data has not already been stored.
+
+        When fetching is not required, this method still returns the latest
+        computed rankings from the database so callers do not need to invoke
+        `PlayerRankingService.get_player_rankings()`.
+        """
 
         if not ExternalStatsService.should_fetch_today():
             logger.info(
                 "Skipping external stats fetch because today's data is already stored"
             )
-            return []
+            return PlayerRankingService.get_player_rankings()
 
         logger.info("Fetching external stats because stored data is stale or missing")
         return ExternalStatsService.sync_all_sources()
@@ -124,122 +132,36 @@ class ExternalStatsService:
         response.raise_for_status()
         return response.json().get("playerTableStats", [])
 
-    @staticmethod
-    def _upsert_players_from_payloads(
-        fetched_payloads: list[tuple[str, list[dict]]],
-    ) -> None:
-        """Aggregate source payloads and upsert one stable row per player."""
-
-        players_by_id: dict[int, dict] = {}
-
-        for _, payload in fetched_payloads:
-            for row in payload:
-                player_id = to_int(row.get("playerId"))
-                if player_id is None:
-                    continue
-
-                if player_id not in players_by_id:
-                    players_by_id[player_id] = {
-                        "name": str(row.get("name") or ""),
-                        "position_text": str(row.get("positionText") or ""),
-                        "team_id": to_int(row.get("teamId")),
-                        "team_name": str(row.get("teamName") or ""),
-                        "stats": {
-                            "goals": 0,
-                            "assists": 0,
-                            "yellow_cards": 0,
-                            "red_cards": 0,
-                            "man_of_the_match": 0,
-                            "appearances": 0,
-                            "rating": 0.0,
-                        },
-                        "rating_total": 0.0,
-                        "rating_count": 0,
-                    }
-
-                player = players_by_id[player_id]
-                stats = player["stats"]
-                stats["goals"] += to_int(row.get("goal")) or 0
-                stats["assists"] += to_int(row.get("assistTotal")) or 0
-                stats["yellow_cards"] += to_int(row.get("yellowCard")) or 0
-                stats["red_cards"] += to_int(row.get("redCard")) or 0
-                stats["man_of_the_match"] += to_int(row.get("manOfTheMatch")) or 0
-                stats["appearances"] += to_int(row.get("apps")) or 0
-
-                rating = to_float(row.get("rating"))
-                if rating is not None:
-                    player["rating_total"] += rating
-                    player["rating_count"] += 1
-
-                if not player["name"]:
-                    player["name"] = str(row.get("name") or "")
-                if not player["position_text"]:
-                    player["position_text"] = str(row.get("positionText") or "")
-                if not player["team_name"]:
-                    player["team_name"] = str(row.get("teamName") or "")
-                if player["team_id"] is None:
-                    player["team_id"] = to_int(row.get("teamId"))
-
-        if not players_by_id:
-            return
-
-        now = timezone.now()
-        player_ids = list(players_by_id.keys())
-        existing_players = {
-            player.player_id: player
-            for player in Player.objects.filter(player_id__in=player_ids)
-        }
-
-        to_create: list[Player] = []
-        to_update: list[Player] = []
-
-        for player_id, data in players_by_id.items():
-            stats = data["stats"]
-            rating_count = data["rating_count"]
-            stats["rating"] = (
-                round(data["rating_total"] / rating_count, 2) if rating_count else 0.0
-            )
-
-            existing = existing_players.get(player_id)
-            if existing is None:
-                to_create.append(
-                    Player(
-                        player_id=player_id,
-                        name=data["name"],
-                        position_text=data["position_text"],
-                        team_id=data["team_id"],
-                        team_name=data["team_name"],
-                        stats=stats,
-                        updated_at=now,
-                    )
-                )
-                continue
-
-            existing.name = data["name"]
-            existing.position_text = data["position_text"]
-            existing.team_id = data["team_id"]
-            existing.team_name = data["team_name"]
-            existing.stats = stats
-            existing.updated_at = now
-            to_update.append(existing)
-
-        if to_create:
-            Player.objects.bulk_create(to_create)
-        if to_update:
-            Player.objects.bulk_update(
-                to_update,
-                ["name", "position_text", "team_id", "team_name", "stats", "updated_at"],
-            )
 
     @staticmethod
-    def sync_all_sources() -> list[tuple[str, list[dict]]]:
-        """Fetch all sources and upsert aggregated players."""
+    def sync_all_sources() -> list[dict]:
+        """Fetch all sources in parallel, compute rankings, and persist aggregated players.
 
-        fetched_payloads = [
-            (str(source), ExternalStatsService._fetch_source_payload(str(source)))
-            for source in SUPPORTED_STATS_SOURCES
-        ]
+        Returns:
+            list[dict]: The computed player ranking records.
+        """
 
+        # Fetch each source payload concurrently to reduce total latency.
+        fetched_payloads: list[tuple[str, list[dict]]] = []
+        with ThreadPoolExecutor(max_workers=len(SUPPORTED_STATS_SOURCES)) as executor:
+            future_to_source = {
+                executor.submit(ExternalStatsService._fetch_source_payload, str(source)): str(source)
+                for source in SUPPORTED_STATS_SOURCES
+            }
+
+            for future in as_completed(future_to_source):
+                source = future_to_source[future]
+                fetched_payloads.append((source, future.result()))
+
+        # Maintain deterministic ordering across runs (matching SUPPORTED_STATS_SOURCES).
+        fetched_payloads.sort(key=lambda item: SUPPORTED_STATS_SOURCES.index(item[0]))
+
+        normalized_records = DataNormalizationService.normalize_payloads(fetched_payloads)
+
+        # Compute rankings and persist players/ranks in a single place.
         with atomic():
-            ExternalStatsService._upsert_players_from_payloads(fetched_payloads)
-            return fetched_payloads
+            rankings = PlayerRankingService.get_player_rankings(
+                player_records=normalized_records, persist=True
+            )
+
+        return rankings
