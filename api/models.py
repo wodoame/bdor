@@ -62,3 +62,17 @@ class AppLog(models.Model):
 
     def __str__(self):
         return f"[{self.timestamp}] {self.level} {self.logger_name}: {self.message[:100]}"
+
+class RequestLog(models.Model):
+    method = models.CharField(max_length=10)
+    path = models.CharField(max_length=500)
+    status_code = models.IntegerField(null=True, blank=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    response_time_ms = models.FloatField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-timestamp']
+
+    def __str__(self):
+        return f"[{self.timestamp}] {self.method} {self.path} - {self.status_code}"
