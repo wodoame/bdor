@@ -156,7 +156,7 @@ USE_TZ = True
 
 # NOTE: STATIC_URL must include a leading and trailing slash so that
 # requests like `/static/index.css` are correctly matched by WhiteNoise.
-STATIC_URL = "/static/"
+STATIC_URL = "static/"
 
 # Additional locations of static files
 STATICFILES_DIRS = [
@@ -167,7 +167,7 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # For production deployment we need to collect static files so WhiteNoise can serve them.
 # Set a STATIC_ROOT so `manage.py collectstatic` has a target directory.
-STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+# STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
