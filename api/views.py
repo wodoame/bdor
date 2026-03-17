@@ -1,13 +1,11 @@
 from django.core.cache import cache
 from django.utils import timezone
 from django.http import HttpResponse
-from pathlib import Path
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from api.services.external_stats_service import ExternalStatsService
-from api.services.player_ranking_service import PlayerRankingService
 
 
 RANKINGS_CACHE_TIMEOUT = 60 * 60 * 24

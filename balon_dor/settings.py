@@ -26,7 +26,8 @@ DEBUG = os.getenv('DEBUG', 'False') == 'True'
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 
-if DEBUG:
+USE_SQLITE = os.getenv('USE_SQLITE', 'False') == 'True'
+if USE_SQLITE and DEBUG:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
