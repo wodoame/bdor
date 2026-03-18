@@ -66,6 +66,8 @@ ALLOWED_HOSTS = [
     'https://balonrank.fun/',  # your purchased domain
     'localhost',
     '127.0.0.1',
+    'balonrank.fun',
+    'www.balonrank.fun'
 ]
 
 
