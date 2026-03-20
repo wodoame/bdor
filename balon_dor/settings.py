@@ -49,7 +49,7 @@ else:
         }
     }
 
-if DEBUG:
+if USE_SQLITE and DEBUG:
     CACHES = {
         "default": {
             "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
