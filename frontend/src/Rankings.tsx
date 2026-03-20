@@ -301,7 +301,7 @@ function Rankings() {
   return (
     <MainLayout>
       <div className="w-full p-4">
-      <div className="flex items-center py-4">
+      <div className="flex items-center gap-4 py-4">
         <Input
           placeholder="Filter names..."
           value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
@@ -312,7 +312,7 @@ function Rankings() {
         />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="ml-auto">
+            <Button variant="outline" className="ml-4 md:ml-auto">
               Columns <ChevronDown />
             </Button>
           </DropdownMenuTrigger>

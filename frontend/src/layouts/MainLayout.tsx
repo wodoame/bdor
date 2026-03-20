@@ -19,12 +19,13 @@ export default function MainLayout({ children }: Props) {
     <div className="min-h-screen flex flex-col">
       <header className="w-full border-b bg-background/50">
         <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between">
-          <a href="#" onClick={(e) => e.preventDefault()} className="flex items-center gap-3" aria-disabled>
-            <img src="/static/balonrank-logo.png" alt="BalonRank logo" className="h-12 w-auto object-contain" />
-            <span className="font-semibold text-sm">BalonRank</span>
-          </a>
-          <NavigationMenu>
-            <NavigationMenuList>
+          <div className="flex items-center gap-6">
+            <a href="#" onClick={(e) => e.preventDefault()} className="flex items-center gap-3" aria-disabled>
+              <img src="/static/balonrank-logo.png" alt="BalonRank logo" className="h-12 w-auto object-contain" />
+              <span className="font-semibold text-sm">BalonRank</span>
+            </a>
+            <NavigationMenu className="flex-none">
+              <NavigationMenuList className="flex-none justify-start">
               <NavigationMenuItem>
                 <NavigationMenuTrigger>Supported Competitions</NavigationMenuTrigger>
                 <NavigationMenuContent>
@@ -59,7 +60,7 @@ export default function MainLayout({ children }: Props) {
                       <NavigationMenuLink asChild>
                         <a href="#" onClick={(e) => e.preventDefault()}>
                           <div className="flex items-center gap-3">
-                            <img src="https://imgs.search.brave.com/nUfwOZT1rMiBec-eSRm8GMIRC97LgEy_9FRnu_6D8i4/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9pbWFn/ZXMuc2Vla2xvZ28u/Y29tL2xvZ28tcG5n/LzIwLzEvYnVuZGVz/bGlnYS1sb2dvLXBu/Z19zZWVrbG9nby0y/MDcwMDIucG5n" alt="Bundesliga" loading="lazy" className="w-10 h-10 rounded-md object-contain" />
+                            <img src="/static/competitions/bundesliga.webp" alt="Bundesliga" loading="lazy" className="w-10 h-10 rounded-md object-contain" />
                             <div className="flex flex-col gap-1 text-sm">
                               <div className="leading-none font-medium">Bundesliga</div>
                             </div>
@@ -135,8 +136,9 @@ export default function MainLayout({ children }: Props) {
                   </ul>
                 </NavigationMenuContent>
               </NavigationMenuItem>
-            </NavigationMenuList>
-          </NavigationMenu>
+              </NavigationMenuList>
+            </NavigationMenu>
+          </div>
         </div>
       </header>
 
