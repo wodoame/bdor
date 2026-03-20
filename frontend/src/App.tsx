@@ -70,7 +70,8 @@ function App() {
           Learn More <ArrowUpRightIcon />
         </a>
       </Button>
-    </Empty>
+      </Empty>
+    </div>
   );
 }
 
