@@ -6,7 +6,6 @@ import {
   NavigationMenuTrigger,
   NavigationMenuContent,
   NavigationMenuLink,
-  navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu"
 // Use plain anchors here to avoid requiring a Router context when the
 // component is rendered outside of the SPA root (server-side pages, previews, etc.).
