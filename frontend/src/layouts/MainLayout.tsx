@@ -70,7 +70,7 @@ export default function MainLayout({ children }: Props) {
       <header className="w-full border-b bg-background/50">
         <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between">
           <div className="flex min-w-0 items-center gap-4 md:gap-6">
-            <a href="#" onClick={(e) => e.preventDefault()} className="flex items-center gap-3" aria-disabled>
+            <a href="/rankings" className="flex items-center gap-3">
               <img src="/static/balonrank-logo.png" alt="BalonRank logo" className="h-12 w-auto object-contain" />
               <span className="font-semibold text-sm">BalonRank</span>
             </a>
@@ -109,7 +109,7 @@ export default function MainLayout({ children }: Props) {
                   <ul className="w-72">
                     <li>
                       <NavigationMenuLink asChild>
-                        <a href="#" onClick={(e) => e.preventDefault()}>How are the points calculated?</a>
+                        <a href="/faqs#points-system">How are the points calculated?</a>
                       </NavigationMenuLink>
                     </li>
                   </ul>
@@ -155,7 +155,7 @@ export default function MainLayout({ children }: Props) {
               <DropdownMenuLabel>FAQs</DropdownMenuLabel>
               <DropdownMenuGroup>
                 <DropdownMenuItem asChild>
-                  <a href="#" onClick={(e) => e.preventDefault()}>
+                  <a href="/faqs#points-system">
                     How are the points calculated?
                   </a>
                 </DropdownMenuItem>

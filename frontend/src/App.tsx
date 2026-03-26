@@ -41,6 +41,14 @@ function App() {
                 </NavigationMenuLink>
             </NavigationMenuContent>
           </NavigationMenuItem>
+          <NavigationMenuItem>
+            <NavigationMenuTrigger>FAQs</NavigationMenuTrigger>
+            <NavigationMenuContent>
+                <NavigationMenuLink asChild>
+                  <a href="/faqs">Information & Rules</a>
+                </NavigationMenuLink>
+            </NavigationMenuContent>
+          </NavigationMenuItem>
         </NavigationMenuList>
       </NavigationMenu>
 
