@@ -14,11 +14,27 @@ import {
   useReactTable,
   type VisibilityState,
 } from "@tanstack/react-table";
-import { ArrowUp, ArrowDown, Circle } from "lucide-react";
+import { ArrowUp, ArrowDown, Circle, ChevronDown } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 // import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from "@/components/ui/combobox";
 import {
   Table,
   TableBody,
@@ -149,6 +165,10 @@ const columns: ColumnDef<Player>[] = [
     cell: ({ row }) => (
       <div className="capitalize">{row.getValue("position")}</div>
     ),
+    filterFn: (row, columnId, filterValue: string[]) => {
+      if (!filterValue || filterValue.length === 0) return true;
+      return filterValue.includes(row.getValue<string>(columnId)?.toLowerCase());
+    },
   },
   {
     accessorKey: "team_name",
@@ -228,7 +248,7 @@ function Rankings() {
     queryFn: fetchPlayerRankings,
   });
 
-  const data = apiData?.players ?? [];
+  const data = React.useMemo(() => apiData?.players ?? [], [apiData?.players]);
 
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
@@ -239,6 +259,24 @@ function Rankings() {
   const [rowSelection, setRowSelection] = React.useState({});
   const [currentPage, setCurrentPage] = React.useState(1);
   const [nameFilterInput, setNameFilterInput] = React.useState("");
+  const [teamFilter, setTeamFilter] = React.useState<string | null>(null);
+  const [positionFilter, setPositionFilter] = React.useState<string[]>([]);
+
+  const teamNames = React.useMemo(
+    () =>
+      [...new Set(data.map((p) => p.team_name))]
+        .filter(Boolean)
+        .sort((a, b) => a.localeCompare(b)),
+    [data],
+  );
+
+  const positions = React.useMemo(
+    () =>
+      [...new Set(data.map((p) => p.position?.toLowerCase()))]
+        .filter(Boolean)
+        .sort((a, b) => a.localeCompare(b)),
+    [data],
+  );
   const [pagination, setPagination] = React.useState<PaginationState>({
     pageIndex: 0,
     pageSize: 50,
@@ -269,14 +307,23 @@ function Rankings() {
     const timeoutId = window.setTimeout(() => {
       table.getColumn("name")?.setFilterValue(nameFilterInput);
     }, 200);
-
     return () => window.clearTimeout(timeoutId);
   }, [nameFilterInput, table]);
+
+  React.useEffect(() => {
+    table.getColumn("team_name")?.setFilterValue(teamFilter ?? undefined);
+  }, [teamFilter, table]);
+
+  React.useEffect(() => {
+    table
+      .getColumn("position")
+      ?.setFilterValue(positionFilter.length > 0 ? positionFilter : undefined);
+  }, [positionFilter, table]);
 
   const scrollToTop = React.useCallback(() => {
     try {
       window.scrollTo({ top: 0, behavior: "smooth" });
-    } catch (e) {
+    } catch (_e) { // eslint-disable-line @typescript-eslint/no-unused-vars
       // fallback for environments where window might be undefined
       // ignore silently
     }
@@ -304,41 +351,74 @@ function Rankings() {
   return (
     <MainLayout>
       <div className="w-full p-4">
-      <div className="flex justify-center py-4">
+      <div className="flex flex-wrap items-center justify-center gap-2 py-4">
         <Input
           placeholder="Filter names..."
           value={nameFilterInput}
           onChange={(event) => setNameFilterInput(event.target.value)}
-          className="w-full max-w-md focus:border-blue-600 focus-visible:outline-2 focus-visible:outline-blue-600"
+          className="w-full max-w-xs rounded-lg border-2"
         />
-        {/*
+        <Combobox
+          value={teamFilter}
+          onValueChange={(value) => setTeamFilter(value as string | null)}
+          items={teamNames}
+        >
+          <ComboboxInput
+            placeholder="Filter teams..."
+            showClear={!!teamFilter}
+            className="w-full max-w-xs rounded-lg border-2 has-[[data-slot=input-group-control]:focus-visible]:border-blue-500 has-[[data-slot=input-group-control]:focus-visible]:ring-0"
+          />
+          <ComboboxContent>
+            <ComboboxEmpty>No teams found.</ComboboxEmpty>
+            <ComboboxList>
+              {(team: string) => (
+                <ComboboxItem key={team} value={team}>
+                  {team}
+                </ComboboxItem>
+              )}
+            </ComboboxList>
+          </ComboboxContent>
+        </Combobox>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="ml-4 md:ml-auto">
-              Columns <ChevronDown />
+            <Button variant="outline" className="min-w-[120px] justify-between rounded-lg border-2 focus-visible:border-blue-500 focus-visible:ring-0 focus-visible:outline-none">
+              {positionFilter.length === 0
+                ? "Position"
+                : positionFilter.map((p) => p.toUpperCase()).join(", ")}
+              <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {table
-              .getAllColumns()
-              .filter((column) => column.getCanHide())
-              .map((column) => {
-                return (
-                  <DropdownMenuCheckboxItem
-                    key={column.id}
-                    className="capitalize"
-                    checked={column.getIsVisible()}
-                    onCheckedChange={(value) =>
-                      column.toggleVisibility(!!value)
-                    }
-                  >
-                    {column.id}
-                  </DropdownMenuCheckboxItem>
-                );
-              })}
+          <DropdownMenuContent align="end" className="w-36">
+            <DropdownMenuLabel>Position</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {positions.map((pos) => (
+              <DropdownMenuCheckboxItem
+                key={pos}
+                className="uppercase"
+                checked={positionFilter.includes(pos)}
+                onCheckedChange={(checked) => {
+                  setPositionFilter((prev) =>
+                    checked ? [...prev, pos] : prev.filter((p) => p !== pos)
+                  );
+                }}
+              >
+                {pos.toUpperCase()}
+              </DropdownMenuCheckboxItem>
+            ))}
+            {positionFilter.length > 0 && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuCheckboxItem
+                  checked={false}
+                  onCheckedChange={() => setPositionFilter([])}
+                  className="text-muted-foreground"
+                >
+                  Clear
+                </DropdownMenuCheckboxItem>
+              </>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
-        */}
       </div>
       <div className="overflow-hidden rounded-md border">
         <Table>
@@ -390,7 +470,7 @@ function Rankings() {
           </TableBody>
         </Table>
       </div>
-      <div className="flex flex-col md:flex-row items-center justify-between gap-4 py-4">
+      <div className="flex flex-col md:flex-row items-center justify-end gap-4 py-4">
         {/* Commented out selection count UI per request. If you want it back,
             uncomment the block below. */}
         {/**
@@ -399,7 +479,7 @@ function Rankings() {
           {table.getFilteredRowModel().rows.length} row(s) selected.
         </div>
         */}
-        <div className="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto order-1 md:order-2">
+        <div className="flex flex-col md:flex-row items-center gap-4">
           <div className="space-x-2">
             <Button
               variant="outline"
@@ -413,7 +493,6 @@ function Rankings() {
               Previous
             </Button>
             <Button
-              variant="outline"
               size="sm"
               onClick={() => {
                 table.nextPage();
@@ -428,32 +507,40 @@ function Rankings() {
             Page {table.getState().pagination.pageIndex + 1} of{" "}
             {table.getPageCount()}
           </div>
-          <div className="flex items-center gap-2">
+          <form
+            className="flex items-center gap-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              const pageIndex = currentPage - 1;
+              if (currentPage > 0 && currentPage <= table.getPageCount()) {
+                table.setPageIndex(pageIndex);
+                scrollToTop();
+              }
+            }}
+          >
             <span className="text-sm text-muted-foreground">Go to:</span>
-            <Input
-              type="number"
-              min="1"
-              max={table.getPageCount()}
-              value={currentPage || ""}
-              onChange={(e) => {
-                const value = +e.target.value;
-                const pageIndex = value - 1;
-                setCurrentPage(value); // if value is 0 the input field will be empty
-                if (value > 0 && value <= table.getPageCount()) {
-                  table.setPageIndex(pageIndex);
-                  scrollToTop();
-                }
-              }}
-              onBlur={() => {
-                if (currentPage < 1 || currentPage > table.getPageCount()) {
-                  setCurrentPage(1); // default to first page if anything is invalid
-                } else {
-                  setCurrentPage(currentPage);
-                }
-              }}
-              className="w-16"
-            />
-          </div>
+            <div className="flex gap-2">
+              <Input
+                type="number"
+                min="1"
+                max={table.getPageCount()}
+                value={currentPage || ""}
+                onChange={(e) => {
+                  const value = +e.target.value;
+                  setCurrentPage(value);
+                }}
+                onBlur={() => {
+                  if (currentPage < 1 || currentPage > table.getPageCount()) {
+                    setCurrentPage(1);
+                  }
+                }}
+                className="w-16 rounded-lg border-2"
+              />
+              <Button type="submit" size="sm" className="rounded-lg">
+                Go
+              </Button>
+            </div>
+          </form>
         </div>
       </div>
       </div>
