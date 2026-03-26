@@ -29,6 +29,44 @@ interface PointsSystem {
   goalkeeper: PointsContext;
 }
 
+const competitions = [
+  {
+    name: "Premier League",
+    imageSrc: "/static/competitions/premier-league.webp",
+    imageAlt: "Premier League",
+  },
+  {
+    name: "La Liga",
+    imageSrc: "/static/competitions/la-liga.webp",
+    imageAlt: "La Liga",
+  },
+  {
+    name: "Bundesliga",
+    imageSrc: "/static/competitions/bundesliga.webp",
+    imageAlt: "Bundesliga",
+  },
+  {
+    name: "Serie A",
+    imageSrc: "/static/competitions/serie-a.webp",
+    imageAlt: "Serie A",
+  },
+  {
+    name: "Ligue 1",
+    imageSrc: "/static/competitions/ligue-1.webp",
+    imageAlt: "Ligue 1",
+  },
+  {
+    name: "Champions League",
+    imageSrc: "/static/competitions/champions-league.webp",
+    imageAlt: "Champions League",
+  },
+  {
+    name: "Europa League",
+    imageSrc: "/static/competitions/europa-league.webp",
+    imageAlt: "Europa League",
+  },
+] as const;
+
 interface FAQsApiResponse {
   points_system: PointsSystem;
 }
@@ -158,6 +196,29 @@ function FAQs() {
             </Accordion>
           </section>
         )}
+
+        <section id="supported-competitions" className="space-y-6">
+          <h2 className="text-2xl font-semibold border-b pb-2">Supported Competitions</h2>
+          <p className="text-muted-foreground">
+            BalonRank currently tracks player statistics and performances across these elite competitions.
+          </p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+            {competitions.map((competition) => (
+              <div
+                key={competition.name}
+                className="flex flex-col items-center justify-center p-4 border rounded-lg bg-card transition-shadow gap-3 text-center"
+              >
+                <img
+                  src={competition.imageSrc}
+                  alt={competition.imageAlt}
+                  loading="lazy"
+                  className="h-16 w-auto object-contain"
+                />
+                <span className="font-medium text-sm">{competition.name}</span>
+              </div>
+            ))}
+          </div>
+        </section>
       </div>
     </MainLayout>
   );

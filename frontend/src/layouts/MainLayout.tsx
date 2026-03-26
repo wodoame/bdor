@@ -26,43 +26,7 @@ type Props = {
   children: React.ReactNode
 }
 
-const competitions = [
-  {
-    name: "Premier League",
-    imageSrc: "/static/competitions/premier-league.webp",
-    imageAlt: "Premier League",
-  },
-  {
-    name: "La Liga",
-    imageSrc: "/static/competitions/la-liga.webp",
-    imageAlt: "La Liga",
-  },
-  {
-    name: "Bundesliga",
-    imageSrc: "/static/competitions/bundesliga.webp",
-    imageAlt: "Bundesliga",
-  },
-  {
-    name: "Serie A",
-    imageSrc: "/static/competitions/serie-a.webp",
-    imageAlt: "Serie A",
-  },
-  {
-    name: "Ligue 1",
-    imageSrc: "/static/competitions/ligue-1.webp",
-    imageAlt: "Ligue 1",
-  },
-  {
-    name: "Champions League",
-    imageSrc: "/static/competitions/champions-league.webp",
-    imageAlt: "Champions League",
-  },
-  {
-    name: "Europa League",
-    imageSrc: "/static/competitions/europa-league.webp",
-    imageAlt: "Europa League",
-  },
-] as const
+
 
 export default function MainLayout({ children }: Props) {
   return (
@@ -76,45 +40,25 @@ export default function MainLayout({ children }: Props) {
             </a>
             <NavigationMenu className="hidden flex-none md:flex">
               <NavigationMenuList className="flex-none justify-start">
-              <NavigationMenuItem>
-                <NavigationMenuTrigger>Supported Competitions</NavigationMenuTrigger>
-                <NavigationMenuContent>
-                  <ul className="grid w-[400px] gap-2 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
-                    {competitions.map((competition) => (
-                      <li key={competition.name}>
+
+
+                <NavigationMenuItem>
+                  <NavigationMenuTrigger>FAQs</NavigationMenuTrigger>
+                  <NavigationMenuContent>
+                    <ul className="w-72">
+                      <li>
                         <NavigationMenuLink asChild>
-                          <a href="#" onClick={(e) => e.preventDefault()}>
-                            <div className="flex items-center gap-3">
-                              <img
-                                src={competition.imageSrc}
-                                alt={competition.imageAlt}
-                                loading="lazy"
-                                className="size-10 rounded-md object-contain"
-                              />
-                              <div className="flex flex-col gap-1 text-sm">
-                                <div className="leading-none font-medium">{competition.name}</div>
-                              </div>
-                            </div>
-                          </a>
+                          <a href="/faqs#points-system">How are the points calculated?</a>
                         </NavigationMenuLink>
                       </li>
-                    ))}
-                  </ul>
-                </NavigationMenuContent>
-              </NavigationMenuItem>
-
-              <NavigationMenuItem>
-                <NavigationMenuTrigger>FAQs</NavigationMenuTrigger>
-                <NavigationMenuContent>
-                  <ul className="w-72">
-                    <li>
-                      <NavigationMenuLink asChild>
-                        <a href="/faqs#points-system">How are the points calculated?</a>
-                      </NavigationMenuLink>
-                    </li>
-                  </ul>
-                </NavigationMenuContent>
-              </NavigationMenuItem>
+                      <li>
+                        <NavigationMenuLink asChild>
+                          <a href="/faqs#supported-competitions">Which competitions are included?</a>
+                        </NavigationMenuLink>
+                      </li>
+                    </ul>
+                  </NavigationMenuContent>
+                </NavigationMenuItem>
               </NavigationMenuList>
             </NavigationMenu>
           </div>
@@ -131,32 +75,18 @@ export default function MainLayout({ children }: Props) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-72 md:hidden">
-              <DropdownMenuLabel>Supported Competitions</DropdownMenuLabel>
-              <DropdownMenuGroup>
-                {competitions.map((competition) => (
-                  <DropdownMenuItem key={competition.name} asChild>
-                    <a
-                      href="#"
-                      onClick={(e) => e.preventDefault()}
-                      className="flex items-center gap-3"
-                    >
-                      <img
-                        src={competition.imageSrc}
-                        alt={competition.imageAlt}
-                        loading="lazy"
-                        className="size-8 rounded-md object-contain"
-                      />
-                      <span>{competition.name}</span>
-                    </a>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuGroup>
+
               <DropdownMenuSeparator />
               <DropdownMenuLabel>FAQs</DropdownMenuLabel>
               <DropdownMenuGroup>
                 <DropdownMenuItem asChild>
                   <a href="/faqs#points-system">
                     How are the points calculated?
+                  </a>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <a href="/faqs#supported-competitions">
+                    Supported Competitions
                   </a>
                 </DropdownMenuItem>
               </DropdownMenuGroup>
