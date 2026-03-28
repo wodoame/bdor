@@ -1,6 +1,5 @@
+from django.core.cache import cache
 from django.http import HttpResponse
-from django.views.decorators.cache import cache_page
-from django.utils.decorators import method_decorator 
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -9,20 +8,27 @@ from api.services.external_stats_service import ExternalStatsService
 
 
 RANKINGS_CACHE_TIMEOUT = 60 * 60 * 24
+RANKINGS_CACHE_KEY = "api:rankings:v1"
 
 
 class Rankings(APIView):
     """API view that returns player points calculations as JSON"""
 
-    @method_decorator(cache_page(RANKINGS_CACHE_TIMEOUT))
     def get(self, request):
         try:
-            player_points = ExternalStatsService.sync_if_stale()
-            response_data = {
-                "success": True,
-                "total_players": len(player_points),
-                "players": player_points,
-            }
+            response_data = cache.get(RANKINGS_CACHE_KEY)
+            if response_data is None:
+                player_points = ExternalStatsService.sync_if_stale()
+                response_data = {
+                    "success": True,
+                    "total_players": len(player_points),
+                    "players": player_points,
+                }
+                cache.set(
+                    RANKINGS_CACHE_KEY,
+                    response_data,
+                    timeout=RANKINGS_CACHE_TIMEOUT,
+                )
             return Response(response_data, status=status.HTTP_200_OK)
         except Exception as e:
             import traceback
