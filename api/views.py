@@ -4,7 +4,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from api.services.external_stats_service import ExternalStatsService
+from api.services.player_ranking_service import PlayerRankingService
 
 
 RANKINGS_CACHE_TIMEOUT = 60 * 60 * 24
@@ -18,7 +18,7 @@ class Rankings(APIView):
         try:
             response_data = cache.get(RANKINGS_CACHE_KEY)
             if response_data is None:
-                player_points = ExternalStatsService.sync_if_stale()
+                player_points = PlayerRankingService.get_player_rankings()
                 response_data = {
                     "success": True,
                     "total_players": len(player_points),

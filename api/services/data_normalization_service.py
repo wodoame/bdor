@@ -16,6 +16,7 @@ class DataNormalizationService:
     @staticmethod
     def normalize_data() -> list[dict]:
         """Load and normalize stored player rows into ranking-ready records."""
+        # TODO: in development we can use a stub for the normalized data
 
         players = Player.objects.all().order_by("player_id")
         normalized: list[dict] = []
