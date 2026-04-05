@@ -78,16 +78,12 @@ const formatPointsValue = (value: number) => {
 const PointsMatrix = ({ data }: { data: PointsSystem | undefined }) => {
   if (!data) return null;
 
+  // Drop columns we don't have reliable data for: clean sheets, penalties, own goals, goals conceded
   const columns = [
     { key: "points_per_goal", label: "Goals" },
     { key: "points_per_assist", label: "Assists" },
-    { key: "points_per_clean_sheet", label: "Clean Sheets" },
-    { key: "points_per_penalty_save", label: "Penalty Saves" },
-    { key: "points_per_penalty_miss", label: "Penalty Misses" },
     { key: "points_per_yellow_card", label: "Yellow Cards" },
     { key: "points_per_red_card", label: "Red Cards" },
-    { key: "points_per_own_goal", label: "Own Goals" },
-    { key: "points_per_2_goals_conceded", label: "2 Goals Conceded" },
     { key: "points_per_man_of_the_match", label: "Man of the Match" },
   ] as const;
 
@@ -100,12 +96,17 @@ const PointsMatrix = ({ data }: { data: PointsSystem | undefined }) => {
 
   return (
     <div className="overflow-x-auto rounded-md border mt-2">
-      <table className="w-full text-sm text-left">
+      <table className="w-full text-sm text-left divide-x divide-border">
         <thead className="bg-muted text-muted-foreground border-b">
           <tr>
             <th className="px-4 py-2 font-medium min-w-56">Position</th>
-            {columns.map((column) => (
-              <th key={column.key} className="px-4 py-2 font-medium text-right whitespace-nowrap">
+            {columns.map((column, idx) => (
+              <th
+                key={column.key}
+                className={`px-4 py-2 font-medium text-right whitespace-nowrap ${
+                  idx > 0 ? "border-l border-border" : ""
+                }`}
+              >
                 {column.label}
               </th>
             ))}
@@ -115,10 +116,13 @@ const PointsMatrix = ({ data }: { data: PointsSystem | undefined }) => {
           {rows.map((row) => (
             <tr key={row.label} className="hover:bg-muted/50 transition-colors">
               <td className="px-4 py-2 font-medium">{row.label}</td>
-              {columns.map((column) => {
-                const rawValue = row.values[column.key];
-                return (
-                  <td key={`${row.label}-${column.key}`} className="px-4 py-2 text-right">
+               {columns.map((column, idx) => {
+                 const rawValue = row.values[column.key];
+                 return (
+                   <td
+                     key={`${row.label}-${column.key}`}
+                     className={`px-4 py-2 text-right ${idx > 0 ? "border-l border-border" : ""}`}
+                   >
                     <span
                       className={
                         rawValue > 0
@@ -176,6 +180,13 @@ function FAQs() {
               Points are awarded differently depending on the player's position. Values shown as N/A do not apply to that position.
             </p>
             <PointsMatrix data={data.points_system} />
+            <p className="text-sm text-muted-foreground pt-2">
+              <span className="font-semibold">NOTE:</span>{" "}
+              For every player, additional points equal to the number of appearances
+              multiplied by their rating (rounded to the nearest whole number) are
+              added. This means appearances affect a player's ranking, not just the
+              player's average rating.
+            </p>
           </section>
         )}
 
