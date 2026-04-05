@@ -312,9 +312,37 @@ function Rankings() {
   );
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
-  const [columnPinning] = React.useState<ColumnPinningState>({
-    left: ["rank", "name"],
+  // Responsive column pinning: pin the first two columns on md+ screens,
+  // but disable pinning on smaller screens so the full table can scroll.
+  const [columnPinning, setColumnPinning] = React.useState<
+    ColumnPinningState
+  >(() => {
+    if (typeof window === "undefined") return {};
+    const mql = window.matchMedia("(min-width: 768px)"); // Tailwind 'md' breakpoint
+    return mql.matches ? { left: ["rank", "name"] } : {};
   });
+
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mql = window.matchMedia("(min-width: 768px)");
+    const handler = (e: MediaQueryListEvent | MediaQueryList) => {
+      const matches = "matches" in e ? e.matches : (e as any).matches;
+      setColumnPinning(matches ? { left: ["rank", "name"] } : {});
+    };
+
+    // Initial sync (in case of SSR hydration differences)
+    handler(mql);
+
+    // Prefer modern addEventListener when available
+    if (typeof mql.addEventListener === "function") {
+      mql.addEventListener("change", handler as EventListener);
+      return () => mql.removeEventListener("change", handler as EventListener);
+    }
+
+    // Fallback for older browsers
+    mql.addListener(handler as any);
+    return () => mql.removeListener(handler as any);
+  }, []);
   const [rowSelection, setRowSelection] = React.useState({});
   const [currentPage, setCurrentPage] = React.useState(1);
   const [nameFilterInput, setNameFilterInput] = React.useState("");
@@ -482,7 +510,7 @@ function Rankings() {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      <div className="overflow-hidden rounded-md border">
+      <div className="overflow-x-auto rounded-md border">
         <Table className="min-w-max border-separate border-spacing-0">
           <TableHeader className="bg-muted">
             {table.getHeaderGroups().map((headerGroup) => (
