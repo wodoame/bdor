@@ -138,6 +138,26 @@ class ExternalStatsViewTests(TestCase):
             self.assertEqual(response.data["error"], "sync failed")
 
 
+from django.core.cache import cache
+
+class ClearCacheViewTests(TestCase):
+    """Test the clear-cache API view."""
+
+    def test_get_clear_cache_returns_success(self):
+        # Set some data in the cache
+        cache.set("test_key", "test_value")
+        self.assertEqual(cache.get("test_key"), "test_value")
+
+        response = self.client.get("/api/clear-cache/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.data["success"])
+        self.assertEqual(response.data["message"], "Cache cleared successfully")
+
+        # Verify the cache is cleared
+        self.assertIsNone(cache.get("test_key"))
+
+
 class ExternalStatsSchedulingTests(TestCase):
     """Test the next-Thursday scheduling logic in ExternalStatsService."""
 

@@ -81,3 +81,11 @@ class ExternalStats(APIView):
                 {"success": False, "error": str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+
+
+class ClearCache(APIView):
+    """API view that forcefully clears the cache."""
+
+    def get(self, request):
+        cache.clear()
+        return Response({"success": True, "message": "Cache cleared successfully"}, status=status.HTTP_200_OK)
