@@ -29,7 +29,7 @@ DEBUG = os.getenv("DEBUG", "False") == "True"
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
 
 USE_SQLITE = os.getenv("USE_SQLITE", "False") == "True"
-if USE_SQLITE and DEBUG:
+if DEBUG:
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
@@ -51,7 +51,7 @@ else:
         }
     }
 
-if USE_SQLITE and DEBUG:
+if DEBUG:
     CACHES = {
         "default": {
             "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
