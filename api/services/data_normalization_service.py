@@ -35,7 +35,7 @@ class DataNormalizationService:
                     "team_name": player.team_name,
                     "appearances": int(player.appearances or 0),
                     "rating": float(player.rating or 0.0),
-                    "previous_rank": player.rank,
+                    "previous_rank": player.previous_rank,
                 }
             )
 

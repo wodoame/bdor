@@ -37,7 +37,7 @@ class DataNormalizationServiceTests(TestCase):
         self.assertEqual(normalized[0]["assists"], 3)
         self.assertEqual(normalized[0]["appearances"], 7)
         self.assertEqual(normalized[0]["rating"], 7.75)
-        self.assertEqual(normalized[0]["previous_rank"], 2)
+        self.assertEqual(normalized[0]["previous_rank"], None)
 
     def test_calculate_rank_change(self):
         self.assertEqual(DataNormalizationService.calculate_rank_change(1, None), "same")

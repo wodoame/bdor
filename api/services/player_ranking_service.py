@@ -19,27 +19,9 @@ class PlayerRankingService:
 
     @staticmethod
     def get_player_rankings(
-        player_records: list[dict] | None = None, *, persist: bool = True
+        player_records: list[dict] | None = None, *, persist: bool = False
     ) -> list[dict]:
-        """Return the current player rankings with computed rank metadata.
-
-        The service normalizes raw competition data into player records (unless
-        already provided), maps source position labels to the domain model values
-        expected by `create_player`, calculates each player's points, sorts players
-        by score, and adds `rank`, `previous_rank`, and `rank_change`.
-
-        Args:
-            player_records: Optional list of normalized player records. If not
-                provided, the service will load stored player rows from the
-                database.
-            persist: If True (default), persist the computed ranks to the
-                database. If False, the operation is read-only and can be used
-                for in-memory ranking evaluation.
-
-        Returns:
-            list[dict]: Ranking records enriched with player stats, points,
-            rank, previous rank, and rank change information.
-        """
+        """Return the current player rankings with computed rank metadata."""
         players_records = (
             player_records
             if player_records is not None
