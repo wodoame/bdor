@@ -76,6 +76,8 @@ ALLOWED_HOSTS = [
     "127.0.0.1",
     "balonrank.fun",
     "www.balonrank.fun",
+    "bdor-l8mw5xmbo-mxwllhayibor0-6348s-projects.vercel.app",
+    "bdor.vercel.app",
 ]
 
 
