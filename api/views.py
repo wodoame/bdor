@@ -7,7 +7,7 @@ from api.services.player_ranking_service import PlayerRankingService
 from api.services.external_stats_service import ExternalStatsService
 
 
-RANKINGS_CACHE_TIMEOUT = 60 * 60 * 24
+RANKINGS_CACHE_TIMEOUT = 60 * 60 * 12
 RANKINGS_CACHE_KEY = "api:rankings:v1"
 
 
