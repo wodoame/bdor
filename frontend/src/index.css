@@ -156,4 +156,13 @@
     @apply bg-background text-foreground;
     font-family: var(--font-sans);
   }
+
+  /* Footer styling for the public index.html footer */
+  #site-footer {
+    text-align: center;
+    padding: 1rem 0;
+    color: #6b7280; /* gray-500 */
+    font-size: 14px;
+    background: transparent;
+  }
 }
