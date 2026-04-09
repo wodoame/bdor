@@ -18,16 +18,15 @@ class Rankings(APIView):
         response_data = cache.get(RANKINGS_CACHE_KEY)
         if response_data is None:
             player_points = ExternalStatsService.update_stats()
-            response_data = self.build_response(player_points)
-        
-        cache.set(
-            RANKINGS_CACHE_KEY,
-            response_data,
-            timeout=RANKINGS_CACHE_TIMEOUT,
-        )
+            response_data = self.build_response_data(player_points)
+            cache.set(
+                RANKINGS_CACHE_KEY,
+                response_data,
+                timeout=RANKINGS_CACHE_TIMEOUT,
+            )
         return Response(response_data, status=status.HTTP_200_OK)
     
-    def build_response(self, player_points):
+    def build_response_data(self, player_points):
         return {
             "success": True,
             "total_players": len(player_points),
