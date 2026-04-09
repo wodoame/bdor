@@ -1,6 +1,7 @@
 import logging
+import random
+import time
 from datetime import timedelta
-from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import cloudscraper
 from django.db import OperationalError, ProgrammingError
@@ -108,11 +109,18 @@ class ExternalStatsService:
             return False
 
     @staticmethod
-    def _fetch_source_payload(source: str) -> list[dict]:
-        """Fetch one source payload from the external API."""
+    def _fetch_source_payload(source: str, scraper: cloudscraper.CloudScraper | None = None) -> list[dict]:
+        """Fetch one source payload from the external API.
+
+        Args:
+            source: The identifier for the stat source.
+            scraper: Optional scraper session to reuse. If not provided, a new one is created.
+        """
 
         config = SOURCE_CONFIG[source]
-        scraper = cloudscraper.create_scraper()
+        if scraper is None:
+            scraper = cloudscraper.create_scraper()
+
         logger.info("Fetching external stats for source '%s'", source)
         response = scraper.get(URL, params=config["params"], headers={})
         response.raise_for_status()
@@ -127,23 +135,30 @@ class ExternalStatsService:
 
     @staticmethod
     def fetch_external_stats() -> list[dict]:
-        """Fetch all sources in parallel, compute rankings, and persist aggregated players.
+        """Fetch all sources sequentially, compute rankings, and persist aggregated players.
 
         Returns:
             list[dict]: The computed player ranking records.
         """
 
-        # Fetch each source payload concurrently to reduce total latency.
+        # Fetch each source payload sequentially with jitter to avoid IP blocking.
         fetched_payloads: list[tuple[str, list[dict]]] = []
-        with ThreadPoolExecutor(max_workers=len(SUPPORTED_STATS_SOURCES)) as executor:
-            future_to_source = {
-                executor.submit(ExternalStatsService._fetch_source_payload, str(source)): str(source)
-                for source in SUPPORTED_STATS_SOURCES
-            }
+        scraper = cloudscraper.create_scraper()
 
-            for future in as_completed(future_to_source):
-                source = future_to_source[future]
-                fetched_payloads.append((source, future.result()))
+        for i, source in enumerate(SUPPORTED_STATS_SOURCES):
+            # Add a small random delay between requests (except the first one) to mimic human behavior.
+            if i > 0:
+                delay = random.uniform(0.5, 1)
+                logger.debug("Sleeping for %.2f seconds before fetching next source", delay)
+                time.sleep(delay)
+
+            source_str = str(source)
+            try:
+                data = ExternalStatsService._fetch_source_payload(source_str, scraper=scraper)
+                fetched_payloads.append((source_str, data))
+            except Exception:
+                logger.exception("Failed to fetch external stats for source '%s'", source_str)
+                raise
 
         # Maintain deterministic ordering across runs (matching SUPPORTED_STATS_SOURCES).
         fetched_payloads.sort(key=lambda item: SUPPORTED_STATS_SOURCES.index(item[0]))

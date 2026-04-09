@@ -78,7 +78,7 @@ class ExternalStatsServiceTests(TestCase):
         with patch.object(
             ExternalStatsService,
             "_fetch_source_payload",
-            side_effect=lambda source: payloads[source],
+            side_effect=lambda source, scraper=None: payloads[source],
         ), patch.object(
             PlayerRankingService,
             "get_player_rankings",
@@ -97,7 +97,7 @@ class ExternalStatsServiceTests(TestCase):
         with patch.object(
             ExternalStatsService,
             "_fetch_source_payload",
-            side_effect=lambda source: payloads[source]
+            side_effect=lambda source, scraper=None: payloads[source]
             if source == "league"
             else (_ for _ in ()).throw(RuntimeError("fetch failed")),
         ):
