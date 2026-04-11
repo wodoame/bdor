@@ -124,3 +124,71 @@ class ClearCacheViewTests(TestCase):
 
         # Verify the cache is cleared
         self.assertIsNone(cache.get("test_key"))
+
+
+class ExternalStatsServiceLockTests(TestCase):
+    """Verify distributed locking behavior in ExternalStatsService."""
+
+    def setUp(self):
+        cache.clear()
+
+    @patch("api.services.external_stats_service.ExternalStatsService.should_fetch_today")
+    @patch("api.services.external_stats_service.ExternalStatsService.fetch_external_stats")
+    @patch("api.services.player_ranking_service.PlayerRankingService.get_player_rankings")
+    def test_update_stats_acquires_lock(self, mock_get_rankings, mock_fetch, mock_should_fetch):
+        mock_should_fetch.return_value = True
+        mock_fetch.return_value = []
+        
+        # Call update_stats
+        ExternalStatsService.update_stats()
+        
+        # Verify fetch was called
+        mock_fetch.assert_called_once()
+        # Verify lock was released
+        self.assertIsNone(cache.get("lock:external_stats_fetch"))
+
+    @patch("api.services.external_stats_service.ExternalStatsService.should_fetch_today")
+    @patch("api.services.external_stats_service.ExternalStatsService.fetch_external_stats")
+    @patch("api.services.player_ranking_service.PlayerRankingService.get_player_rankings")
+    def test_update_stats_returns_immediately_if_lock_held(self, mock_get_rankings, mock_fetch, mock_should_fetch):
+        mock_should_fetch.return_value = True
+        
+        # Simulate lock already held by mocking cache.add to always return False
+        with patch("django.core.cache.cache.add", return_value=False):
+            # We also need to speed up the test by mocking time.sleep or wait_timeout
+            # but mocking cache.add to return False will make it loop until wait_timeout.
+            # Let's mock the cache_lock context manager to simulate a timeout immediately.
+            from api.services.external_stats_service import cache_lock
+            
+            with patch("api.services.external_stats_service.cache_lock") as mock_lock:
+                mock_lock.return_value.__enter__.return_value = False # acquired = False
+                ExternalStatsService.update_stats()
+            
+        mock_fetch.assert_not_called()
+        mock_get_rankings.assert_called_once()
+
+    @patch("api.services.external_stats_service.ExternalStatsService.should_fetch_today")
+    @patch("api.services.external_stats_service.ExternalStatsService.fetch_external_stats")
+    def test_update_stats_double_check_prevents_fetch(self, mock_fetch, mock_should_fetch):
+        # First call to should_fetch_today (unlocked) returns True
+        # Second call (locked) returns False (simulating someone else finished)
+        mock_should_fetch.side_effect = [True, False]
+        
+        ExternalStatsService.update_stats()
+        
+        mock_fetch.assert_not_called()
+
+    @patch("api.services.external_stats_service.ExternalStatsService.should_fetch_today")
+    @patch("api.services.external_stats_service.ExternalStatsService.fetch_external_stats")
+    @patch("api.services.player_ranking_service.PlayerRankingService.get_player_rankings")
+    def test_cache_lock_releases_on_error(self, mock_get_rankings, mock_fetch, mock_should_fetch):
+        mock_should_fetch.return_value = True
+        # fetch_external_stats raises error, but update_stats catches it
+        mock_fetch.side_effect = RuntimeError("fetch error")
+        mock_get_rankings.return_value = []
+        
+        # This call should catch the error and return rankings
+        ExternalStatsService.update_stats()
+            
+        # Verify lock was released
+        self.assertIsNone(cache.get("lock:external_stats_fetch"))

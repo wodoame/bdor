@@ -4,10 +4,12 @@ import time
 from datetime import timedelta
 
 import cloudscraper
+import contextlib
 from django.db import OperationalError, ProgrammingError
 from django.db.transaction import atomic
 from django.utils import timezone
 from django.conf import settings
+from django.core.cache import cache
 
 from api.models import StatsSource, FetchRecord
 from api.services.data_normalization_service import DataNormalizationService
@@ -60,6 +62,28 @@ SOURCE_CONFIG: dict[str, dict[str, dict[str, str]]] = {
     },
 }
 
+
+@contextlib.contextmanager
+def cache_lock(lock_key: str, timeout: int = 600, wait_timeout: int = 30):
+    """Distributed lock using django cache.
+
+    Yields:
+        bool: True if lock was acquired, False if it timed out.
+    """
+    start_time = time.time()
+    acquired = False
+    while time.time() - start_time < wait_timeout:
+        if cache.add(lock_key, "locked", timeout=timeout):
+            acquired = True
+            break
+        time.sleep(0.5)
+
+    yield acquired
+
+    if acquired:
+        cache.delete(lock_key)
+
+
 SUPPORTED_STATS_SOURCES = list(StatsSource.values)
 
 class ExternalStatsService:
@@ -73,24 +97,39 @@ class ExternalStatsService:
     def update_stats() -> list[dict]:
         """Fetch stats only when today's data has not already been stored.
 
-        When fetching is not required, this method still returns the latest
-        computed rankings from the database so callers do not need to invoke
-        `PlayerRankingService.get_player_rankings()`.
+        Uses a distributed lock and double-checked locking to prevent multiple
+        concurrent requests from triggering redundant external API calls.
         """
 
+        # First fast check (unlocked)
         if not ExternalStatsService.should_fetch_today():
-            logger.info(
-                "Skipping external stats fetch"
-            )
+            logger.info("Skipping external stats fetch (data is fresh)")
             return PlayerRankingService.get_player_rankings()
 
-        logger.info("Fetching external stats")
-        try:
-            player_points = ExternalStatsService.fetch_external_stats()
-        except Exception as e:
-            logger.exception("Failed to fetch external stats")
-            player_points = PlayerRankingService.get_player_rankings()
-        return player_points
+        # Attempt to acquire a distributed lock
+        lock_key = "lock:external_stats_fetch"
+        with cache_lock(lock_key, timeout=600, wait_timeout=30) as acquired:
+            if not acquired:
+                logger.warning(
+                    "Timed out waiting for external stats fetch lock. "
+                    "Returning existing rankings."
+                )
+                return PlayerRankingService.get_player_rankings()
+
+            # Second check (locked) - another request might have finished the fetch
+            if not ExternalStatsService.should_fetch_today():
+                logger.info(
+                    "Skipping external stats fetch (fetch completed by another process)"
+                )
+                return PlayerRankingService.get_player_rankings()
+
+            logger.info("Fetching external stats")
+            try:
+                player_points = ExternalStatsService.fetch_external_stats()
+            except Exception:
+                logger.exception("Failed to fetch external stats")
+                player_points = PlayerRankingService.get_player_rankings()
+            return player_points
 
     @staticmethod
     def should_fetch_today() -> bool:
