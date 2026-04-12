@@ -100,6 +100,10 @@ class ExternalStatsService:
         Uses a distributed lock and double-checked locking to prevent multiple
         concurrent requests from triggering redundant external API calls.
         """
+        
+        if settings.DEBUG: 
+            logger.info("Avoiding external network calls in DEBUG mode")
+            return PlayerRankingService.get_player_rankings()
 
         # First fast check (unlocked)
         if not ExternalStatsService.should_fetch_today():
