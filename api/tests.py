@@ -25,6 +25,7 @@ class DataNormalizationServiceTests(TestCase):
             appearances=7,
             rating=7.75,
             rank=2,
+            is_eligible=True,
         )
 
         normalized = DataNormalizationService.normalize_data()

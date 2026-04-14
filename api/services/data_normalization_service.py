@@ -9,6 +9,11 @@ POSITION_MAPPING = {
     "Goalkeeper": "keeper",
 }
 
+# Tournament IDs for the top 5 leagues (matches SOURCE_CONFIG tournamentOptions for StatsSource.LEAGUE).
+# Players must appear in at least one of these competitions to be eligible for ranking.
+LEAGUE_TOURNAMENT_IDS: frozenset[int] = frozenset({2, 3, 4, 5, 22})
+# 2 = Premier League, 3 = Bundesliga, 4 = LaLiga, 5 = Serie A, 22 = Ligue 1
+
 
 class DataNormalizationService:
     """Normalize Player rows or external stats payloads into ranking-ready records."""
@@ -16,9 +21,8 @@ class DataNormalizationService:
     @staticmethod
     def normalize_data() -> list[dict]:
         """Load and normalize stored player rows into ranking-ready records."""
-        # TODO: in development we can use a stub for the normalized data because database might not contain data yet
 
-        players = Player.objects.all().order_by("player_id")
+        players = Player.objects.filter(is_eligible=True).order_by("player_id")
         normalized: list[dict] = []
 
         for player in players:
@@ -106,6 +110,7 @@ class DataNormalizationService:
                 appearances=("apps", "sum"),
                 rating=("rating", "mean"),
                 competitions_count=("tournamentId", "nunique"),
+                is_eligible=("tournamentId", lambda ids: bool(pd.to_numeric(ids, errors="coerce").isin(LEAGUE_TOURNAMENT_IDS).any())),
             )
             .reset_index()
         )
@@ -154,6 +159,7 @@ class DataNormalizationService:
                     "appearances": int(row.get("appearances") or 0),
                     "rating": float(row.get("rating") or 0.0),
                     "competitions_count": int(row.get("competitions_count") or 0),
+                    "is_eligible": bool(row.get("is_eligible")),
                     "previous_rank": existing.rank if existing is not None else None,
                 }
             )

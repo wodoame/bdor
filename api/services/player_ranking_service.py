@@ -57,6 +57,7 @@ class PlayerRankingService:
                         "rating": player.rating,
                         "appearances": player.appearances,
                         "competitions_count": int(record.get("competitions_count") or 0),
+                        "is_eligible": bool(record.get("is_eligible")),
                         "previous_rank": record.get("previous_rank"),
                     }
                 )
@@ -117,6 +118,7 @@ class PlayerRankingService:
                 "appearances": int(ranking.get("appearances") or 0),
                 "rating": float(ranking.get("rating") or 0.0),
                 "competitions_count": int(ranking.get("competitions_count") or 0),
+                "is_eligible": bool(ranking.get("is_eligible")),
                 "rank": ranking.get("rank"),
                 "previous_rank": ranking.get("previous_rank"),
                 "updated_at": now,
@@ -137,6 +139,7 @@ class PlayerRankingService:
             existing.appearances = player_kwargs["appearances"]
             existing.rating = player_kwargs["rating"]
             existing.competitions_count = player_kwargs["competitions_count"]
+            existing.is_eligible = player_kwargs["is_eligible"]
             existing.rank = player_kwargs["rank"]
             existing.previous_rank = player_kwargs["previous_rank"]
             existing.updated_at = now
@@ -162,6 +165,7 @@ class PlayerRankingService:
                     "appearances",
                     "rating",
                     "competitions_count",
+                    "is_eligible",
                     "rank",
                     "previous_rank",
                     "updated_at",
