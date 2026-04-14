@@ -17,7 +17,7 @@ class Rankings(APIView):
     def get(self, request):
         response_data = cache.get(RANKINGS_CACHE_KEY)
         if response_data is None:
-            player_points = ExternalStatsService.update_stats()
+            player_points = PlayerRankingService.get_player_rankings()
             response_data = self.build_response_data(player_points)
             cache.set(
                 RANKINGS_CACHE_KEY,
@@ -52,3 +52,9 @@ class DeleteFetchRecord(APIView):
     def get(self, request):
         delete_fetch_record()
         return Response({"success": True, "message": "Fetch record deleted successfully"}, status=status.HTTP_200_OK)
+
+class UpdateStats(APIView):
+    def get(self, request):
+        delete_fetch_record()
+        ExternalStatsService.update_stats()
+        return Response({"success": True, "message": "Stats updated successfully"}, status=status.HTTP_200_OK)

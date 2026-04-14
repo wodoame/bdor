@@ -116,7 +116,7 @@ class ClearCacheViewTests(TestCase):
         cache.set("test_key", "test_value")
         self.assertEqual(cache.get("test_key"), "test_value")
 
-        response = self.client.get("/api/clear-cache/")
+        response = self.client.get("/api/cc/")
 
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.data["success"])
