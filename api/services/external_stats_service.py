@@ -186,13 +186,13 @@ class ExternalStatsService:
                     logger.debug("Sleeping for %.2f seconds before fetching next source", delay)
                     time.sleep(delay)
 
-            source_str = str(source)
-            try:
-                data = ExternalStatsService._fetch_source_payload(source_str, scraper=scraper)
-                fetched_payloads.append((source_str, data))
-            except Exception:
-                logger.exception("Failed to fetch external stats for source '%s'", source_str)
-                raise
+                source_str = str(source)
+                try:
+                    data = ExternalStatsService._fetch_source_payload(source_str, scraper=scraper)
+                    fetched_payloads.append((source_str, data))
+                except Exception:
+                    logger.exception("Failed to fetch external stats for source '%s'", source_str)
+                    raise
         else:
             import json
             from pathlib import Path
