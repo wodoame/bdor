@@ -141,7 +141,23 @@ class ExternalStatsService:
             scraper = cloudscraper.create_scraper()
 
         logger.info("Fetching external stats for source '%s'", source)
+
+        # Diagnostic logging (temporary): identify which egress IP / Cloudflare
+        # PoP this invocation uses, to correlate 403s with routing rather than code.
+        try:
+            egress_ip = scraper.get("https://api.ipify.org", timeout=10).text.strip()
+        except Exception:
+            egress_ip = "unknown"
+
         response = scraper.get(URL, params=config["params"], headers={})
+        logger.info(
+            "External stats response: source=%s status=%s egress_ip=%s cf_ray=%s server=%s",
+            source,
+            response.status_code,
+            egress_ip,
+            response.headers.get("CF-RAY", "-"),
+            response.headers.get("Server", "-"),
+        )
         response.raise_for_status()
         return response.json().get("playerTableStats", [])
 
